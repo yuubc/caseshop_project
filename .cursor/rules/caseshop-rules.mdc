@@ -1,0 +1,237 @@
+# Wireframe Document – Phone Case Shop (Flutter Assignment)
+
+---
+
+## 3.1 Product List Page (홈 화면)
+
+### Page Name
+- product_list_page
+
+### Role
+- 앱의 첫 화면
+- 등록된 상품(핸드폰 케이스) 목록 표시
+
+---
+
+### UI Structure
+
+#### AppBar
+- Title: **Phone Case Shop**
+- Back Button
+  - 이전 페이지로 이동 (첫 화면일 경우 비활성 또는 숨김 가능)
+
+---
+
+#### Body – Product List Area
+- ListView 사용
+- 상품이 많을 경우 세로 스크롤 가능
+
+##### Product Item (Card 형태)
+- 구성 요소
+  - 상품 이미지
+    - Image.network 사용
+    - placeholder 가능
+    - 둥근 모서리 (BorderRadius)
+  - 상품 이름 (Text)
+  - 상품 가격 (Text)
+
+- 카드 전체 클릭 가능
+  - 클릭 시 `product_detail_page`로 이동
+  - 선택한 상품 데이터 전달
+
+---
+
+#### Empty State
+- 상품 데이터가 없을 경우
+  - 중앙에 텍스트 표시
+  - 문구: **"상품이 없습니다."**
+
+---
+
+#### Floating Action Button (FAB)
+- 위치: 우측 하단
+- 아이콘: ➕
+- 클릭 시
+  - `product_create_page`로 이동
+
+---
+
+### Exception Handling
+- 가격이 3자리 이상일 경우
+  - 천 단위 콤마 표시 (예: 12,000)
+- 가격이 0일 경우
+  - "무료" 로 표시
+
+---
+
+### User Actions
+- ➕ 버튼 클릭 → product_create_page 이동
+- 상품 카드 클릭 → product_detail_page 이동
+
+---
+
+## 3.2 Product Create Page (상품 등록 화면)
+
+### Page Name
+- product_create_page
+
+### Role
+- 새로운 상품을 등록하여 상품 목록에 추가
+
+---
+
+### UI Structure
+
+#### AppBar
+- Title: **Add Product**
+- Back Button
+  - 클릭 시 이전 페이지로 이동
+
+---
+
+#### Body – Product Form
+
+##### Image Picker Area
+- 이미지 선택 버튼
+- 클릭 시 이미지 선택 팝업 표시
+- 이미지 선택 후 상태 표시 방법 중 하나 사용
+  - "이미지 선택됨" 텍스트 표시
+  - Local Image 표시
+  - 또는 샘플 이미지 사용
+    - https://picsum.photos/200/300
+
+---
+
+##### Input Fields
+- 상품명 입력
+  - TextField
+  - 텍스트 입력 가능
+
+- 상품 가격 입력
+  - TextField
+  - 숫자만 입력 가능
+  - 키보드 타입: number
+
+- 상품 설명 입력
+  - TextField
+  - 여러 줄 입력 가능 (multiline)
+
+---
+
+#### Bottom Fixed Button
+- 버튼 텍스트: **Save**
+- 화면 하단에 고정
+
+---
+
+### Validation & Exception Handling
+- 아래 항목 중 하나라도 입력되지 않으면 등록 불가
+  - 이미지
+  - 상품명
+  - 상품 가격
+  - 상품 설명
+
+- 처리 방법
+  - 팝업(Dialog)
+  - Toast
+  - 또는 입력창 붉은 표시
+
+- 상품 가격
+  - 반드시 숫자만 입력 가능
+
+---
+
+### User Actions
+- Save 버튼 클릭 시
+  - 입력 값 검증
+  - 상품 데이터 생성
+  - 상품 리스트에 추가
+  - product_list_page로 이동
+
+---
+
+### Constraints
+- 유효성 검사는 최소화
+- 빈 값 여부만 체크
+
+---
+
+## 3.3 Product Detail Page (상품 상세 화면)
+
+### Page Name
+- product_detail_page
+
+### Role
+- 선택한 상품의 상세 정보 표시
+- 수량 선택 및 주문 기능 제공
+
+---
+
+### UI Structure
+
+#### AppBar
+- Title: 상품명 또는 "Product Detail"
+- Back Button
+  - 클릭 시 product_list_page로 이동
+
+---
+
+#### Body – Product Detail
+
+##### Product Image
+- 큰 사이즈 이미지 표시
+
+##### Product Info
+- 상품명
+- 상품 가격
+
+---
+
+##### Quantity Selector
+- 구성 요소
+  - `-` 버튼
+  - 수량 표시 텍스트
+    - 기본값: 1
+  - `+` 버튼
+
+- 수량 변경 시
+  - 총 가격 자동 업데이트
+
+---
+
+##### Order Button
+- 버튼 텍스트: **Order**
+
+---
+
+### Order Flow
+1. Order 버튼 클릭
+2. 확인 팝업 표시
+   - 메시지:
+     - "${상품명}을 ${구매 수량}개 구매하시겠습니까?"
+   - 버튼:
+     - 취소
+     - 확인
+
+3. 취소 클릭
+   - 팝업 닫기
+
+4. 확인 클릭
+   - 구매 완료 팝업 표시
+   - 확인 버튼 클릭 시 모든 팝업 닫기
+
+---
+
+### Exception Handling
+- 상품 설명이 길 경우
+  - 전체 화면 스크롤 가능
+
+- 구매 수량 제한
+  - 최소: 1
+  - 최대: 99
+  - 0 이하 또는 100 이상 불가
+
+---
+---
+alwaysApply: true
+---
