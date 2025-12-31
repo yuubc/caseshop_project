@@ -1,10 +1,16 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../models/product.dart';
 
 class ProductDetailPage extends StatefulWidget {
   final Product product;
+  final Function(Product product, int quantity)? onAddToCart;
 
-  const ProductDetailPage({super.key, required this.product});
+  const ProductDetailPage({
+    super.key,
+    required this.product,
+    this.onAddToCart,
+  });
 
   @override
   State<ProductDetailPage> createState() => _ProductDetailPageState();
@@ -40,6 +46,154 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         quantity--;
       });
     }
+  }
+
+  Widget _buildProductImage() {
+    // 1) 로컬 이미지가 있으면 파일로 표시
+    if (widget.product.imagePath != null &&
+        widget.product.imagePath!.isNotEmpty) {
+      final file = File(widget.product.imagePath!);
+      return Image.file(
+        file,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(
+                Icons.image_not_supported,
+                size: 100,
+                color: Colors.grey,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // 2) 네트워크 이미지가 있으면 네트워크로 표시
+    if (widget.product.imageUrl != null && widget.product.imageUrl!.isNotEmpty) {
+      return Image.network(
+        widget.product.imageUrl!,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(
+                Icons.image_not_supported,
+                size: 100,
+                color: Colors.grey,
+              ),
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: Colors.grey[300],
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // 3) 아무것도 없으면 placeholder
+    return Container(
+      color: Colors.grey[300],
+      child: const Center(
+        child: Icon(
+          Icons.shopping_bag,
+          size: 100,
+          color: Colors.grey,
+        ),
+      ),
+    );
+  }
+
+  void _showAddToCartDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('장바구니'),
+          content: Text(
+            '${widget.product.name}을(를) $quantity개 장바구니에 담으시겠습니까?',
+            style: const TextStyle(fontSize: 16),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text(
+                '취소',
+                style: TextStyle(color: Colors.grey, fontSize: 16),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // 장바구니에 추가
+                if (widget.onAddToCart != null) {
+                  widget.onAddToCart!(widget.product, quantity);
+                }
+                Navigator.of(context).pop();
+                _showAddToCartCompleteDialog();
+              },
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('확인', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _showAddToCartCompleteDialog() {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: const Text('장바구니 담기 완료'),
+          content: const Text(
+            '장바구니에 상품이 담겼습니다!',
+            style: TextStyle(fontSize: 16),
+          ),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(12),
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              style: ElevatedButton.styleFrom(
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              child: const Text('확인', style: TextStyle(fontSize: 16)),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _showPurchaseConfirmDialog() {
@@ -187,54 +341,7 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
                   // 상품 이미지 (큰 화면)
                   AspectRatio(
                     aspectRatio: 4 / 3, // 4:3 비율로 줄임 (이전: 1:1 정사각형)
-                    child:
-                        widget.product.imageUrl != null &&
-                            widget.product.imageUrl!.isNotEmpty
-                        ? Image.network(
-                            widget.product.imageUrl!,
-                            width: double.infinity,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                color: Colors.grey[300],
-                                child: const Center(
-                                  child: Icon(
-                                    Icons.image_not_supported,
-                                    size: 100,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              );
-                            },
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Container(
-                                color: Colors.grey[300],
-                                child: Center(
-                                  child: CircularProgressIndicator(
-                                    value:
-                                        loadingProgress.expectedTotalBytes !=
-                                            null
-                                        ? loadingProgress
-                                                  .cumulativeBytesLoaded /
-                                              loadingProgress
-                                                  .expectedTotalBytes!
-                                        : null,
-                                  ),
-                                ),
-                              );
-                            },
-                          )
-                        : Container(
-                            color: Colors.grey[300],
-                            child: const Center(
-                              child: Icon(
-                                Icons.shopping_bag,
-                                size: 100,
-                                color: Colors.grey,
-                              ),
-                            ),
-                          ),
+                    child: _buildProductImage(),
                   ),
                   // 상품 정보
                   Padding(
@@ -314,83 +421,122 @@ class _ProductDetailPageState extends State<ProductDetailPage> {
         ),
         child: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            child: Row(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                // 수량 조절 버튼
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.grey[300]!),
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: Row(
-                    children: [
-                      IconButton(
-                        onPressed: _decreaseQuantity,
-                        icon: const Icon(Icons.remove),
-                        color: quantity > 1 ? Colors.black87 : Colors.grey,
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(),
+                // 첫 번째 줄: 수량 조절 + 총 가격
+                Row(
+                  children: [
+                    // 수량 조절 버튼
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(color: Colors.grey[300]!),
+                        borderRadius: BorderRadius.circular(8),
                       ),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12),
-                        child: Text(
-                          '$quantity',
-                          style: const TextStyle(
+                      child: Row(
+                        children: [
+                          IconButton(
+                            onPressed: _decreaseQuantity,
+                            icon: const Icon(Icons.remove),
+                            color: quantity > 1 ? Colors.black87 : Colors.grey,
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              '$quantity',
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: _increaseQuantity,
+                            icon: const Icon(Icons.add),
+                            color: quantity < 99 ? Colors.black87 : Colors.grey,
+                            padding: const EdgeInsets.all(8),
+                            constraints: const BoxConstraints(),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    // 총 가격
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text(
+                            '총 가격',
+                            style: TextStyle(fontSize: 12, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            _formatPrice(totalPrice),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                // 두 번째 줄: 장바구니 담기 + 구매하기 버튼
+                Row(
+                  children: [
+                    // 장바구니 담기 버튼
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _showAddToCartDialog,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          backgroundColor: Colors.white,
+                          foregroundColor: Theme.of(context).colorScheme.primary,
+                          side: BorderSide(
+                            color: Theme.of(context).colorScheme.primary,
+                            width: 1.5,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '장바구니',
+                          style: TextStyle(
                             fontSize: 16,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
                       ),
-                      IconButton(
-                        onPressed: _increaseQuantity,
-                        icon: const Icon(Icons.add),
-                        color: quantity < 99 ? Colors.black87 : Colors.grey,
-                        padding: const EdgeInsets.all(8),
-                        constraints: const BoxConstraints(),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                // 총 가격
-                Expanded(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        '총 가격',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        _formatPrice(totalPrice),
-                        style: const TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.black87,
+                    ),
+                    const SizedBox(width: 12),
+                    // 구매하기 버튼
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: _showPurchaseConfirmDialog,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                        child: const Text(
+                          '구매하기',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                // 주문 버튼
-                ElevatedButton(
-                  onPressed: _showPurchaseConfirmDialog,
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 32,
-                      vertical: 16,
                     ),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  child: const Text(
-                    '구매하기',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
+                  ],
                 ),
               ],
             ),

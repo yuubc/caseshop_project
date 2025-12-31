@@ -3,6 +3,7 @@ import '../models/product.dart';
 import '../widgets/product_card.dart';
 import 'product_detail_page.dart';
 import 'product_create_page.dart';
+import 'product_shopping_cart.dart';
 
 class ProductListPage extends StatefulWidget {
   const ProductListPage({super.key});
@@ -12,12 +13,12 @@ class ProductListPage extends StatefulWidget {
 }
 
 class _ProductListPageState extends State<ProductListPage> {
-  // 임시 상품 데이터 (실제로는 API나 데이터베이스에서 가져옴)
+  // 임시 상품 데이터
   List<Product> products = [
     const Product(
       name: '아이폰 15 Pro 케이스',
       price: 35000,
-      imageUrl: 'https://picsum.photos/300/300?random=1', //랜덤으로이미지띄움
+      imageUrl: 'https://picsum.photos/300/300?random=1',
       description: '고급스러운 가죽 케이스',
     ),
     const Product(
@@ -46,11 +47,30 @@ class _ProductListPageState extends State<ProductListPage> {
     ),
   ];
 
+  // 장바구니 리스트 (상품과 수량을 함께 관리)
+  final List<Product> cart = [];
+  final Map<String, int> cartQuantities = {}; // 상품명: 수량
+
+  void _addToCart(Product product, int quantity) {
+    setState(() {
+      // 이미 장바구니에 있는 상품인지 확인
+      if (cartQuantities.containsKey(product.name)) {
+        // 이미 있으면 수량만 증가
+        cartQuantities[product.name] = cartQuantities[product.name]! + quantity;
+      } else {
+        // 없으면 새로 추가
+        cart.add(product);
+        cartQuantities[product.name] = quantity;
+      }
+    });
+  }
+
   void _navigateToDetail(Product product, int index) async {
     final shouldDelete = await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => ProductDetailPage(product: product),
+        builder: (context) =>
+            ProductDetailPage(product: product, onAddToCart: _addToCart),
       ),
     );
 
@@ -84,10 +104,22 @@ class _ProductListPageState extends State<ProductListPage> {
     }
   }
 
+  void _navigateToCart() async {
+    await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) =>
+            ProductShoppingCart(cart: cart, cartQuantities: cartQuantities),
+      ),
+    );
+    // 장바구니에서 돌아왔을 때 화면 새로고침
+    setState(() {});
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white, // 흰색 배경
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: Row(
           mainAxisSize: MainAxisSize.min,
@@ -103,6 +135,44 @@ class _ProductListPageState extends State<ProductListPage> {
         elevation: 0,
         backgroundColor: Colors.white,
         foregroundColor: Colors.black87,
+        actions: [
+          // 장바구니 아이콘
+          Stack(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.shopping_cart_outlined),
+                onPressed: _navigateToCart,
+                tooltip: '장바구니',
+              ),
+              if (cart.isNotEmpty)
+                Positioned(
+                  right: 8,
+                  top: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: Colors.red,
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      '${cartQuantities.values.fold(0, (sum, qty) => sum + qty)}',
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
       body: SafeArea(
         child: products.isEmpty

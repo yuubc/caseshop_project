@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:io';
 import '../models/product.dart';
 
 class ProductCard extends StatelessWidget {
@@ -21,6 +22,79 @@ class ProductCard extends StatelessWidget {
       (Match m) => '${m[1]},',
     );
     return '$formatter원';
+  }
+
+  Widget _buildProductImage() {
+    // 1) 로컬 이미지가 있으면 파일로 표시
+    if (product.imagePath != null && product.imagePath!.isNotEmpty) {
+      final file = File(product.imagePath!);
+      return Image.file(
+        file,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(
+                Icons.image_not_supported,
+                size: 40,
+                color: Colors.grey,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // 2) 네트워크 이미지가 있으면 네트워크로 표시
+    if (product.imageUrl != null && product.imageUrl!.isNotEmpty) {
+      return Image.network(
+        product.imageUrl!,
+        width: double.infinity,
+        height: double.infinity,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey[300],
+            child: const Center(
+              child: Icon(
+                Icons.image_not_supported,
+                size: 40,
+                color: Colors.grey,
+              ),
+            ),
+          );
+        },
+        loadingBuilder: (context, child, loadingProgress) {
+          if (loadingProgress == null) return child;
+          return Container(
+            color: Colors.grey[300],
+            child: Center(
+              child: CircularProgressIndicator(
+                value: loadingProgress.expectedTotalBytes != null
+                    ? loadingProgress.cumulativeBytesLoaded /
+                        loadingProgress.expectedTotalBytes!
+                    : null,
+              ),
+            ),
+          );
+        },
+      );
+    }
+
+    // 3) 아무것도 없으면 placeholder
+    return Container(
+      color: Colors.grey[300],
+      child: const Center(
+        child: Icon(
+          Icons.shopping_bag,
+          size: 40,
+          color: Colors.grey,
+        ),
+      ),
+    );
   }
 
   @override
@@ -46,47 +120,7 @@ class ProductCard extends StatelessWidget {
                 child: SizedBox(
                   width: 120,
                   height: 120,
-                  child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                      ? Image.network(
-                          product.imageUrl!,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
-                              color: Colors.grey[300],
-                              child: const Center(
-                                child: Icon(
-                                  Icons.image_not_supported,
-                                  size: 40,
-                                  color: Colors.grey,
-                                ),
-                              ),
-                            );
-                          },
-                          loadingBuilder: (context, child, loadingProgress) {
-                            if (loadingProgress == null) return child;
-                            return Container(
-                              color: Colors.grey[300],
-                              child: Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded /
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                ),
-                              ),
-                            );
-                          },
-                        )
-                      : Container(
-                          color: Colors.grey[300],
-                          child: const Center(
-                            child: Icon(
-                              Icons.shopping_bag,
-                              size: 40,
-                              color: Colors.grey,
-                            ),
-                          ),
-                        ),
+                  child: _buildProductImage(),
                 ),
               ),
               // 상품 정보 (오른쪽)
@@ -97,19 +131,36 @@ class ProductCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        product.name,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            product.name,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          if (product.description != null &&
+                              product.description!.isNotEmpty)
+                            Text(
+                              product.description!,
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black54,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                        ],
                       ),
                       Text(
                         _formatPrice(product.price),
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           color: product.price == 0
                               ? Colors.green[700]
                               : Colors.black87,
@@ -127,4 +178,3 @@ class ProductCard extends StatelessWidget {
     );
   }
 }
-

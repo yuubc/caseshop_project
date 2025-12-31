@@ -56,7 +56,7 @@ class _ProductCreatePageState extends State<ProductCreatePage> {
       final product = Product(
         name: _nameController.text,
         price: int.parse(_priceController.text),
-        imageUrl: _imagePath,
+        imagePath: _imagePath, // 로컬 이미지 경로로 저장
         description: _descriptionController.text.isEmpty
             ? null
             : _descriptionController.text,
@@ -69,12 +69,13 @@ class _ProductCreatePageState extends State<ProductCreatePage> {
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      // 화면 터치 시 키보드 숨기기
       onTap: () {
+        // 빈 영역 터치 시 키보드 숨기기
         FocusScope.of(context).unfocus();
       },
       child: Scaffold(
         backgroundColor: Colors.white, // 흰색 배경
+        resizeToAvoidBottomInset: true, // 키보드가 올라올 때 화면 조정
         appBar: AppBar(
           title: const Text('상품 등록'),
           elevation: 0,
